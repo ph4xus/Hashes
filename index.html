@@ -1,0 +1,86 @@
+<!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.1//EN&quot; &quot;http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd&quot;>
+<html xmlns=&quot;http://www.w3.org/1999/xhtml&quot; lang=&quot;en&quot;>
+	<head>
+		<meta http-equiv=&quot;Content-Type&quot; content=&quot;text/html;charset=utf-8&quot; />
+		<meta http-equiv=&quot;Referrer-Policy&quot; content=&quot;no-referrer&quot; />
+		<meta name=&quot;referrer&quot; content=&quot;no-referrer&quot; />
+		<meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot; />
+		<base href=&quot;/&quot; target=&quot;_blank&quot; />
+		<title>Hashed File Generator</title>
+	</head>
+	<body>
+		<h2>Hashed File Generator</h2>
+		<label for=&quot;size&quot;>Size: </label>
+		<input id=&quot;size&quot; type=&quot;number&quot; value=&quot;10&quot; min=&quot;1&quot; max=&quot;1023&quot; />
+		<select id=&quot;unit&quot; title=&quot;Unit&quot;>
+			<option value=&quot;B&quot;>B</option>
+			<option value=&quot;KB&quot;>KB</option>
+			<option value=&quot;MB&quot; selected=&quot;true&quot;>MB</option>
+		</select>
+		<br /><br />
+		<label for=&quot;type&quot;>Type: </label>
+		<select id=&quot;type&quot; title=&quot;Type&quot;>
+			<option value=&quot;zero&quot;>Zero</option>
+			<option value=&quot;hashed&quot;>Hashed</option>
+		</select>
+		<br /><br />
+		<button id=&quot;generate&quot; type=&quot;button&quot;>Generate</button>
+		<script type=&quot;text/javascript&quot;>
+&quot;use strict&quot;;
+
+// <![CDATA[
+(() => {
+	const sizeElem = document.getElementById(&quot;size&quot;);
+	const unitElem = document.getElementById(&quot;unit&quot;);
+	const typeElem = document.getElementById(&quot;type&quot;);
+	const downloadElem = document.getElementById(&quot;download&quot;);
+
+	function uuid() {
+		let d = performance.now() || Date.now();
+		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+			let r = Math.random() * 16;
+			r = (d + r) % 16 | 0;
+			d = Math.floor(d / 16);
+			return (c === 'x' ? r : (r &amp; 0x3 | 0x8)).toString(16);
+		});
+	}
+
+	document.getElementById(&quot;generate&quot;).onclick = () => {
+		let size = parseInt(sizeElem.value);
+	
+		switch (unitElem.value) {
+			case &quot;GB&quot;:
+				size *= 1024;
+			case &quot;MB&quot;:
+				size *= 1024;
+			case &quot;KB&quot;:
+				size *= 1024;
+				break;
+		}
+
+		const url = URL.createObjectURL(new Blob([(() => {
+			const buf = new Uint8Array(size);
+			if (typeElem.value === &quot;hashed&quot;) {
+				const parts = Math.floor(buf.byteLength / 65536) + 1;
+				for (let i = 0; i < parts; ) {
+					crypto.getRandomValues(buf.subarray(65536 * i, 65536 * (++i)));
+				}
+			}
+			return buf;
+		})()], { type: &quot;application/misc&quot;, endings: &quot;native&quot; }));
+
+		const elem = document.createElement(&quot;a&quot;);
+		elem.href = url;
+		elem.target = &quot;_blank&quot;;
+		elem.download = uuid();
+
+		document.body.appendChild(elem);
+		elem.click();
+		elem.remove();
+		URL.revokeObjectURL(url);
+	};
+})();
+// ]]>
+		</script>
+	</body>
+</html>

@@ -1,39 +1,37 @@
-<!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.1//EN&quot; &quot;http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd&quot;>
-<html xmlns=&quot;http://www.w3.org/1999/xhtml&quot; lang=&quot;en&quot;>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 	<head>
-		<meta http-equiv=&quot;Content-Type&quot; content=&quot;text/html;charset=utf-8&quot; />
-		<meta http-equiv=&quot;Referrer-Policy&quot; content=&quot;no-referrer&quot; />
-		<meta name=&quot;referrer&quot; content=&quot;no-referrer&quot; />
-		<meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot; />
-		<base href=&quot;/&quot; target=&quot;_blank&quot; />
+		<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+		<meta http-equiv="Referrer-Policy" content="no-referrer" />
+		<meta name="referrer" content="no-referrer" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<base href="/" target="_blank" />
 		<title>Hashed File Generator</title>
 	</head>
 	<body>
 		<h2>Hashed File Generator</h2>
-		<label for=&quot;size&quot;>Size: </label>
-		<input id=&quot;size&quot; type=&quot;number&quot; value=&quot;10&quot; min=&quot;1&quot; max=&quot;1023&quot; />
-		<select id=&quot;unit&quot; title=&quot;Unit&quot;>
-			<option value=&quot;B&quot;>B</option>
-			<option value=&quot;KB&quot;>KB</option>
-			<option value=&quot;MB&quot; selected=&quot;true&quot;>MB</option>
+		<label for="size">Size: </label>
+		<input id="size" type="number" value="10" min="1" max="1023" />
+		<select id="unit" title="Unit">
+			<option value="B">B</option>
+			<option value="KB">KB</option>
+			<option value="MB" selected="true">MB</option>
 		</select>
 		<br /><br />
-		<label for=&quot;type&quot;>Type: </label>
-		<select id=&quot;type&quot; title=&quot;Type&quot;>
-			<option value=&quot;zero&quot;>Zero</option>
-			<option value=&quot;hashed&quot;>Hashed</option>
+		<label for="type">Type: </label>
+		<select id="type" title="Type">
+			<option value="zero">Zero</option>
+			<option value="hashed">Hashed</option>
 		</select>
 		<br /><br />
-		<button id=&quot;generate&quot; type=&quot;button&quot;>Generate</button>
-		<script type=&quot;text/javascript&quot;>
-&quot;use strict&quot;;
-
+		<button id="generate" type="button">Generate</button>
+		<script type="text/javascript">
+"use strict";
 // <![CDATA[
 (() => {
-	const sizeElem = document.getElementById(&quot;size&quot;);
-	const unitElem = document.getElementById(&quot;unit&quot;);
-	const typeElem = document.getElementById(&quot;type&quot;);
-	const downloadElem = document.getElementById(&quot;download&quot;);
+	const sizeElem = document.getElementById("size");
+	const unitElem = document.getElementById("unit");
+	const typeElem = document.getElementById("type");
 
 	function uuid() {
 		let d = performance.now() || Date.now();
@@ -41,37 +39,37 @@
 			let r = Math.random() * 16;
 			r = (d + r) % 16 | 0;
 			d = Math.floor(d / 16);
-			return (c === 'x' ? r : (r &amp; 0x3 | 0x8)).toString(16);
+			return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
 		});
 	}
 
-	document.getElementById(&quot;generate&quot;).onclick = () => {
+	document.getElementById("generate").onclick = () => {
 		let size = parseInt(sizeElem.value);
-	
+
 		switch (unitElem.value) {
-			case &quot;GB&quot;:
+			case "GB":
 				size *= 1024;
-			case &quot;MB&quot;:
+			case "MB":
 				size *= 1024;
-			case &quot;KB&quot;:
+			case "KB":
 				size *= 1024;
 				break;
 		}
 
 		const url = URL.createObjectURL(new Blob([(() => {
 			const buf = new Uint8Array(size);
-			if (typeElem.value === &quot;hashed&quot;) {
+			if (typeElem.value === "hashed") {
 				const parts = Math.floor(buf.byteLength / 65536) + 1;
 				for (let i = 0; i < parts; ) {
 					crypto.getRandomValues(buf.subarray(65536 * i, 65536 * (++i)));
 				}
 			}
 			return buf;
-		})()], { type: &quot;application/misc&quot;, endings: &quot;native&quot; }));
+		})()], { type: "application/misc", endings: "native" }));
 
-		const elem = document.createElement(&quot;a&quot;);
+		const elem = document.createElement("a");
 		elem.href = url;
-		elem.target = &quot;_blank&quot;;
+		elem.target = "_blank";
 		elem.download = uuid();
 
 		document.body.appendChild(elem);

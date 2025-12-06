@@ -2,184 +2,384 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Bitcoin Hash Calculator (Free API)</title>
+    <title>Bitcoin Miner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
-        body { margin:0; padding:0; background:linear-gradient(120deg, #090a0f 0%, #06141d 100%); min-height:100vh; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #000; 
+            font-family: 'Share Tech Mono', monospace; 
+            overflow-x: hidden; 
+            color: #ffffff;
+        }
+        .scanlines {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
+            background: repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, transparent 2px);
+            pointer-events: none; animation: scanline 8s linear infinite;
+        }
+        @keyframes scanline { 0% { transform: translateY(0); } 100% { transform: translateY(50px); }}
+        .matrix-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
+            background: radial-gradient(circle at 50% 50%, #0a0a0a 0%, #000000 100%);
+        }
         .container {
-            background: rgba(14, 25, 33, 0.94);
-            max-width: 560px;
-            margin: 40px auto 25px auto;
-            border-radius: 18px;
-            box-shadow: 0 0 32px #16ffb833, 0 0 1.2em #014529;
-            padding: 2.3em 2em 1.9em 2em;
-            border: 2.8px solid #01d88f88;
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
+            position: relative; z-index: 2;
+            background: rgba(10, 10, 10, 0.95);
+            max-width: 95%;
+            margin: 20px auto;
+            border-radius: 0;
+            box-shadow: 0 0 40px #ffffff22, 0 0 80px #ffffff11, inset 0 0 60px #11111111;
+            padding: 1.5em;
+            border: 1px solid #ffffff;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            grid-gap: 20px;
+        }
+        @media (max-width: 1200px) { 
+            .container { 
+                grid-template-columns: 1fr; 
+            } 
         }
         h1 {
-            color: #26ffe2;
-            text-shadow: 0 0 8px #1affd588, 0 0 14px #1af9ca;
-            font-family: inherit;
-            font-size: 2.2em;
-            margin-top: 0; margin-bottom: 0.5em;
+            color: #ffffff;
+            text-shadow: 0 0 10px #ffffff, 0 0 20px #ffffff88, 0 0 30px #ffffff44;
+            font-size: 1.8em;
+            margin: 0 0 0.3em 0;
             text-align: center;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            border-bottom: 2px solid #ffffff;
+            padding-bottom: 0.3em;
+            animation: flicker 3s infinite alternate;
         }
-        .toggle-wrap {
-            margin: 1.1em 0 1.8em 0;
-            text-align: center; }
-        .toggle-label {
-            background: #162a21;
-            color: #1affd5;
-            padding: 0.41em 1.17em 0.41em 0.85em;
-            border-radius: 4px;
-            border: 1px solid #29e88779;
-            box-shadow: 0 0 5px #14ff9588 inset;
-            margin-left: 8px;
-            transition: border-color 0.18s;
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            41%, 43% { opacity: 0.9; }
+            45% { opacity: 1; }
         }
-        label, input[type="checkbox"] {
-            cursor: pointer;
-            font-size: 1em;
-            user-select: none;
+        .subtitle {
+            text-align: center; 
+            color: #cccccc; 
+            opacity: 0.8;
+            font-size: 0.75em; 
+            letter-spacing: 2px; 
+            margin-bottom: 1.5em;
         }
-        input[type="checkbox"] { transform: scale(1.32); margin-right:6px;}
+        .left-panel { display: flex; flex-direction: column; gap: 15px; }
+        .right-panel { display: flex; flex-direction: column; gap: 15px; }
+        .nonce-stream {
+            background: #000; 
+            border: 1px solid #888888;
+            border-radius: 0; 
+            padding: 10px; 
+            height: 400px; 
+            overflow-y: auto;
+            font-size: 0.8em; 
+            color: #cccccc;
+            box-shadow: inset 0 0 20px #11111111;
+        }
+        .nonce-stream::-webkit-scrollbar { width: 6px; background: #111111; }
+        .nonce-stream::-webkit-scrollbar-thumb { background: #666666; }
+        .nonce-line { 
+            opacity: 0.7; 
+            margin: 2px 0; 
+            font-family: 'Share Tech Mono', monospace; 
+        }
+        .nonce-line.found { 
+            color: #ffffff; 
+            opacity: 1; 
+            font-weight: bold; 
+            animation: pulse 0.5s; 
+        }
+        @keyframes pulse { 
+            0%, 100% { opacity: 1; } 
+            50% { opacity: 0.5; } 
+        }
         button {
-            background: #122d18;
-            border: 2px solid #41d97c;
-            color: #41ff9c;
-            font-size: 1.13em;
-            letter-spacing: 0.05em;
-            padding: 0.55em 2.15em;
-            border-radius: 7px;
-            box-shadow: 0 0 14px #14ef90b7;
+            background: #000;
+            border: 2px solid #ffffff;
+            color: #ffffff;
+            font-size: 1em;
+            letter-spacing: 3px;
+            padding: 0.7em 2em;
+            border-radius: 0;
+            box-shadow: 0 0 20px #ffffff44;
             cursor: pointer;
-            transition: .17s;
-            margin: 0 auto 1.5em auto;
-            display: block;
+            transition: .15s;
+            font-family: 'Share Tech Mono', monospace;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
         }
+        button:before {
+            content: ''; 
+            position: absolute; 
+            top: 0; 
+            left: -100%; 
+            width: 100%; 
+            height: 100%;
+            background: linear-gradient(90deg, transparent, #ffffff22, transparent);
+            transition: left 0.5s;
+        }
+        button:hover:before { left: 100%; }
         button:hover, button:active {
-            background: #234d1d;
-            border-color: #4effd8;
-            color: #a1ffe7;
-            box-shadow: 0 0 16px #41ef70;
+            background: #222222;
+            border-color: #ffffff;
+            color: #ffffff;
+            box-shadow: 0 0 30px #ffffff66;
         }
         .panel {
-            background: #101918dc;
-            border-radius: 9px;
-            border-left: 3.2px solid #37ffc7cc;
-            border-right: 2.6px solid #26ffaa21;
-            box-shadow: 0 0 1.3em #17ffb214, 0 0 0.4em #1ed3822a;
-            margin-bottom: 1.25em;
-            padding: 1.1em 1em 1.1em 1.3em;
+            background: rgba(15, 15, 15, 0.9);
+            border-radius: 0;
+            border: 1px solid #666666;
+            box-shadow: 0 0 15px #ffffff11, inset 0 0 30px #11111105;
+            padding: 12px;
+            position: relative;
+        }
+        .panel:before {
+            content: ''; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            right: 0;
+            height: 1px; 
+            background: linear-gradient(90deg, transparent, #888888, transparent);
         }
         h3 {
-            color: #59ffe4;
-            font-size: 1.07em;
-            border-left: 3px solid #02ef90;
-            padding-left: 12px;
-            margin: 0.65em 0 0.85em;
-            text-shadow: 0 0 6px #09b9a0;
+            color: #ffffff;
+            font-size: 0.9em;
+            border-left: 3px solid #ffffff;
+            padding-left: 10px;
+            margin: 0 0 10px 0;
+            text-shadow: 0 0 10px #ffffff44;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
-        .stats-area {
-            background: #162d17e4;
-            color: #6ffd89;
-            border-radius: 7px;
-            font-family: inherit;
-            letter-spacing: 0.2px;
-            padding: 0.95em 1.2em 1.1em 1em;
-            font-size: 1em;
-            border: 1px solid #19ffb972;
-            margin-bottom:.9em; margin-top:1.3em;
-            box-shadow: 0 0 0.5em #1fff9588 inset;
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
         }
-        .statrow { display: flex; flex-wrap:wrap; margin-bottom: 2px; }
-        .statlabel {
-            min-width: 120px;
-            color: #41ffe3; margin-right: 1.4em;
+        .stat-box {
+            background: #000;
+            border: 1px solid #666666;
+            padding: 10px;
+            text-align: center;
+            box-shadow: inset 0 0 10px #11111111;
         }
-        .statval {
-            font-family: inherit;
+        .stat-label {
+            color: #aaaaaa;
+            font-size: 0.7em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+        }
+        .stat-value {
+            color: #ffffff;
+            font-size: 1.3em;
             font-weight: bold;
-            color: #b0ffc7;
-            text-shadow: 0 0 5px #19f7c144;
+            text-shadow: 0 0 10px #ffffff44;
+            margin-top: 5px;
+        }
+        .chart-container {
+            background: #000;
+            border: 1px solid #666666;
+            padding: 10px;
+            height: 150px;
+            position: relative;
+            overflow: hidden;
+        }
+        #hashRateChart {
+            width: 100%;
+            height: 100%;
         }
         textarea, #status, #foundHash {
-            background-color: #0b161b !important;
-            color: #48ffdd;
-            font-size: 1em;
-            border-radius: 6px;
-            border: 1.5px solid #21e04d77;
-            padding: 0.7em;
-            box-shadow: 0 0 0.95em #0cdb7099 inset;
-            font-family: inherit;
-            width: 98%;
-            margin: 2px 0 9px 0;
+            background-color: #000 !important;
+            color: #ffffff;
+            font-size: 0.85em;
+            border-radius: 0;
+            border: 1px solid #666666;
+            padding: 10px;
+            box-shadow: inset 0 0 20px #11111111;
+            font-family: 'Share Tech Mono', monospace;
+            width: calc(100% - 22px);
+            margin: 0;
             outline: none;
-            transition: border-color 0.20s, box-shadow 0.2s;
         }
         textarea:focus, #foundHash:focus, #status:focus {
-            border-color: #39ffb7 !important;
-            box-shadow: 0 0 0.35em #13fff1c7, 0 0 0.65em #09ff6c3e;
+            border-color: #ffffff !important;
+            box-shadow: 0 0 20px #ffffff33;
         }
         textarea[readonly] {
             resize: none;
-            opacity: 0.97;
+            opacity: 0.9;
         }
         #status {
-            font-weight: bold;
-            color: #08fbdc;
-            border-left: 4.5px solid #44fcd1;
-            box-shadow: none;
-            border-top: none; border-bottom: none; border-right: none;
-            padding-left: 1.2em; margin-bottom: 13px;
-            background: #0d2127e8 !important;
-            min-height: 2.2em;
+            font-weight: normal;
+            color: #ffffff;
+            border: 1px solid #666666;
+            padding: 10px;
+            min-height: 2em;
+            box-shadow: inset 0 0 10px #11111111;
         }
-        .success { color: #88ff90 !important; text-shadow: 0 0 10px #54ffb9e4; }
-        .error   { color: #ff4261 !important; border-color: #ff4261 !important; text-shadow: 0 0 4px #ff4261; }
-        #foundHash { font-size: 1.04em; color: #30ffb3; word-break: break-all; margin:0;}
-        ::selection { background: #33ffc733; }
-        ::-webkit-scrollbar { width: 9px; background: #1d242c;}
-        ::-webkit-scrollbar-thumb { background: #088e5c; border-radius: 7px;}
+        .success { 
+            color: #ffffff !important; 
+            text-shadow: 0 0 20px #ffffff; 
+            animation: flicker 1s infinite;
+        }
+        .error { 
+            color: #ff4444 !important; 
+            border-color: #ff4444 !important; 
+            text-shadow: 0 0 10px #ff4444; 
+        }
+        #foundHash { 
+            font-size: 0.9em; 
+            color: #ffffff; 
+            word-break: break-all; 
+        }
+        ::selection { background: #ffffff33; color: #000; }
+        ::-webkit-scrollbar { width: 6px; background: #000;}
+        ::-webkit-scrollbar-thumb { background: #666666; }
         @media (max-width: 600px) {
-            .container { padding: 1.3em 0.6em; }
-            .panel { padding: 0.7em 0.5em 0.8em 0.7em;}
-            .stats-area { font-size:0.97em; }
+            .container { padding: 10px; }
+            .stats-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
+    <div class="scanlines"></div>
+    <div class="matrix-bg"></div>
     <div class="container">
-        <h1>Bitcoin Hash Calculator</h1>
-        <div class="toggle-wrap">
-            <input id="toggleNonceWindow" type="checkbox" checked>
-            <label class="toggle-label" for="toggleNonceWindow">Show Nonce Log Window (slower)</label>
-        </div>
-        <button onclick="startMining()">Start Hash Calculation</button>
-        <div class="panel">
-            <h3>Latest Block Header Data:</h3>
-            <textarea id="blockHeader" readonly rows="6"></textarea>
-        </div>
-        <div class="panel">
-            <div class="stats-area" id="miningStats">
-                <div class="statrow"><span class="statlabel">Nonces tried:</span><span class="statval" id="stat_nonces">0</span></div>
-                <div class="statrow"><span class="statlabel">Elapsed time:</span><span class="statval" id="stat_secs">0.00s</span></div>
-                <div class="statrow"><span class="statlabel">Hashes/sec:</span><span class="statval" id="stat_speed">0</span></div>
-                <div class="statrow"><span class="statlabel">Lowest hash:</span><span class="statval" id="stat_lowest"></span></div>
+        <div class="left-panel">
+            <div class="panel">
+                <h1>⟨ BTC MINER ⟩</h1>
+                <div class="subtitle">HASH CALCULATION SYSTEM v2.1</div>
+                <button onclick="startMining()">► INITIATE MINING SEQUENCE</button>
             </div>
-            <h3>Calculation Status:</h3>
-            <div id="status"></div>
+            
+            <div class="panel">
+                <h3>⟩ LIVE NONCE STREAM</h3>
+                <div class="nonce-stream" id="nonceStream"></div>
+            </div>
+            
+            <div class="panel">
+                <h3>⟩ BLOCK HEADER DATA</h3>
+                <textarea id="blockHeader" readonly rows="8"></textarea>
+            </div>
         </div>
-        <div class="panel">
-            <h3>Found Hash:</h3>
-            <p id="foundHash"></p>
+        
+        <div class="right-panel">
+            <div class="panel">
+                <h3>⟩ MINING METRICS</h3>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">Nonces Tested</div>
+                        <div class="stat-value" id="stat_nonces">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Elapsed Time</div>
+                        <div class="stat-value" id="stat_secs">0.00s</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Hash Rate</div>
+                        <div class="stat-value" id="stat_speed">0 H/s</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Difficulty (Trillion)</div>
+                        <div class="stat-value" id="stat_difficulty" style="font-size:1em;">-</div>
+                    </div>
+                    <div class="stat-box" style="grid-column: span 2;">
+                        <div class="stat-label">Target Hash</div>
+                        <div class="stat-value" id="stat_target" style="font-size:0.6em; word-break: break-all;">-</div>
+                    </div>
+                    <div class="stat-box" style="grid-column: span 2;">
+                        <div class="stat-label">Lowest Hash Discovered</div>
+                        <div class="stat-value" id="foundHash" style="font-size:0.6em; word-break: break-all;">-</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h3>⟩ HASH RATE ANALYSIS</h3>
+                <div class="chart-container">
+                    <canvas id="hashRateChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h3>⟩ SYSTEM STATUS</h3>
+                <div id="status">System idle. Ready to initiate mining sequence.</div>
+            </div>
         </div>
     </div>
     <script>
+        // --- Chart setup ---
+        let hashRateData = [];
+        let maxDataPoints = 50;
+
+        function initChart() {
+            const canvas = document.getElementById('hashRateChart');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            return ctx;
+        }
+
+        function updateChart(ctx, data) {
+            const canvas = ctx.canvas;
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, width, height);
+            
+            if (data.length < 2) return;
+            
+            const max = Math.max(...data, 1);
+            const step = width / (maxDataPoints - 1);
+            
+            // Draw grid
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 5; i++) {
+                const y = (height / 4) * i;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+            
+            // Draw line
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ffffff';
+            ctx.beginPath();
+            
+            for (let i = 0; i < data.length; i++) {
+                const x = i * step;
+                const y = height - (data[i] / max) * height;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            
+            // Draw points
+            ctx.fillStyle = '#ffffff';
+            for (let i = 0; i < data.length; i++) {
+                const x = i * step;
+                const y = height - (data[i] / max) * height;
+                ctx.beginPath();
+                ctx.arc(x, y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
         // --- Typing effect utility ---
-        async function typeText(elem, text, delay=15, append=false) {
-            // Clear or setup
+        async function typeText(elem, text, delay=10, append=false) {
             if (!append) elem.textContent = '';
             for (let i = 0; i < text.length; i++) {
                 elem.textContent += text[i];
@@ -187,21 +387,27 @@
             }
         }
 
-        // --- Log pop-up window styling ---
-        const logWinStyle = `<style>
-            body { background: #0b1017; color:#6cffd0; font-family: monospace; font-size: 1em; margin:0.2em 0.6em;}
-            h2 { color: #1affd5; text-shadow: 0 0 10px #3afff388; border-bottom: 1.6px solid #17d99e44; }
-            #log { width:100%; height:70vh; overflow-y:auto; background:#08141d; padding:0.8em 0.7em; border-radius:6px; box-shadow:0 0 8px #13ffce2a inset;}
-            .found { color:#1aff29 !important; font-weight:bold; text-shadow:0 0 4px #b3ffca;}
-            ::-webkit-scrollbar { width:9px; background:#071614;}
-            ::-webkit-scrollbar-thumb { background:#29ffdb88;}
-        </style>`;
-        function scrollToBottomLog(logDiv) {
-            if (!logDiv) return;
-            logDiv.scrollTop = logDiv.scrollHeight + 1000;
-            const last = logDiv.lastElementChild;
-            if (last) last.scrollIntoView({behavior: "instant", block:"end"});
+        // --- Nonce stream (replaces pop-up window) ---
+        function logNonceToStream(nonce, hash, found) {
+            const stream = document.getElementById('nonceStream');
+            const line = document.createElement('div');
+            line.className = 'nonce-line' + (found ? ' found' : '');
+            line.textContent = `${nonce.toString().padStart(8, '0')}${hash ? ' : ' + hash.substring(0, 16) + '...' : ''}`;
+            stream.appendChild(line);
+            
+            // Keep only last 500 lines
+            while (stream.children.length > 500) {
+                stream.removeChild(stream.firstChild);
+            }
+            
+            // Auto-scroll
+            stream.scrollTop = stream.scrollHeight;
         }
+
+        function clearNonceStream() {
+            document.getElementById('nonceStream').innerHTML = '';
+        }
+
         function hexToBytes(hex) {
             if (hex.length % 2 !== 0) throw new Error("Hex string must have even length!");
             const bytes = new Uint8Array(hex.length / 2);
@@ -210,12 +416,15 @@
             }
             return bytes;
         }
+        
         function bytesToHex(arr) {
             return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
         }
+        
         function toLittleEndian(hex) {
             return hex.match(/../g).reverse().join('');
         }
+        
         async function getLatestBlockHeader() {
             const chainInfoResp = await fetch('https://api.blockcypher.com/v1/btc/main');
             if (!chainInfoResp.ok) throw new Error('Could not fetch latest block hash');
@@ -239,12 +448,14 @@
                 nonce: 0
             };
         }
+        
         function bitsToTarget(bits) {
             let exponent = bits >>> 24;
             let mantissa = bits & 0xffffff;
             let target = BigInt(mantissa) * (2n ** (8n * (BigInt(exponent) - 3n)));
             return target;
         }
+        
         function serializeBlockHeader(header) {
             for (let key of ['ver', 'prev_block', 'mrkl_root', 'time', 'bits', 'nonce']) {
                 if (header[key] === undefined || header[key] === null) {
@@ -260,45 +471,86 @@
                 + header.nonce.toString(16).padStart(8, '0');
             return hexToBytes(hex);
         }
+        
         async function doubleSHA256(buffer) {
             let hash1 = await crypto.subtle.digest('SHA-256', buffer);
             let hash2 = await crypto.subtle.digest('SHA-256', hash1);
             return bytesToHex(new Uint8Array(hash2));
         }
 
-        // ========= Mining & logging logic ==========
-        let logWin = null;
-        let nonceLogOn = true;
-        function openLogWindow() {
-            if (!nonceLogOn) return;
-            if (logWin && !logWin.closed) { logWin.focus(); return logWin; }
-            logWin = window.open('', 'NonceLog', 'width=560,height=660,scrollbars');
-            logWin.document.write(
-                '<!DOCTYPE html><title>Nonce Log</title>' + logWinStyle +
-                '<body><h2>Mining Log</h2><div id="log"></div></body>'
-            );
-            logWin.document.close();
-            logWin.logDiv = logWin.document.getElementById('log');
-            return logWin;
+        async function broadcastBlock(header, winningHash) {
+            const statusDiv = document.getElementById('status');
+            
+            try {
+                // Create the full block header hex
+                const blockHeaderHex = bytesToHex(serializeBlockHeader(header));
+                
+                statusDiv.textContent = '🎉 VALID BLOCK FOUND! Attempting to broadcast to Bitcoin network...';
+                
+                // Try BlockCypher's broadcast endpoint
+                const response = await fetch('https://api.blockcypher.com/v1/btc/main/txs/push', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        tx: blockHeaderHex
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    statusDiv.textContent = `✅ SUCCESS! Block broadcasted to network! Hash: ${winningHash}`;
+                    console.log('Broadcast result:', result);
+                } else {
+                    const error = await response.text();
+                    statusDiv.textContent = `⚠️ Block found but broadcast failed. You may need to use a full Bitcoin node. Hash: ${winningHash}`;
+                    console.error('Broadcast error:', error);
+                }
+                
+                // Also log the winning block details
+                console.log('=== WINNING BLOCK DETAILS ===');
+                console.log('Block Header Hex:', blockHeaderHex);
+                console.log('Winning Nonce:', header.nonce);
+                console.log('Winning Hash:', winningHash);
+                console.log('You can manually broadcast this at: https://blockchair.com/broadcast');
+                
+            } catch (error) {
+                statusDiv.textContent = `⚠️ Valid hash found but couldn't broadcast automatically. Hash: ${winningHash}`;
+                console.error('Broadcast error:', error);
+                console.log('Manual broadcast: Copy the block header from console and submit at blockchair.com/broadcast');
+                console.log('Block Header:', bytesToHex(serializeBlockHeader(header)));
+            }
         }
-        function logNonce(nonce, hash, found) {
-            if (!nonceLogOn || !logWin || logWin.closed) return;
-            logWin.logDiv.insertAdjacentHTML('beforeend',
-                `<span${found ? ' class="found"' : ''}>${nonce}${hash ? ` : ${hash}` : ''}</span><br>`);
-            scrollToBottomLog(logWin.logDiv);
-        }
-        function clearLogWindow() {
-            if (!logWinOn() || !logWin || logWin.closed) return;
-            logWin.logDiv.innerHTML = '';
-        }
-        function closeLogWindow() {
-            if (logWin && !logWin.closed) logWin.close();
-        }
-        function logWinOn() { return nonceLogOn; }
-        document.getElementById('toggleNonceWindow').addEventListener('change', function(e) {
-            nonceLogOn = e.target.checked;
-            if (!nonceLogOn) closeLogWindow();
-        });
+
+        // TEST FUNCTION - Run in console to simulate finding a block
+        window.testBroadcast = async function() {
+            console.log('🧪 TESTING BROADCAST FUNCTION...');
+            console.log('Note: This will fail because we are using fake data, but you can see the flow');
+            
+            // Create a fake winning block header
+            const fakeHeader = {
+                ver: 536870912,
+                prev_block: 'e'.repeat(64),
+                mrkl_root: 'a'.repeat(64),
+                time: Math.floor(Date.now() / 1000),
+                bits: 386089497,
+                nonce: 123456789
+            };
+            
+            const fakeHash = '0'.repeat(64);
+            
+            console.log('Fake header created:', fakeHeader);
+            console.log('Calling broadcastBlock...');
+            
+            await broadcastBlock(fakeHeader, fakeHash);
+            
+            console.log('✅ Test complete! Check the status panel and console output above.');
+            console.log('If you actually find a valid block, this same function will run automatically!');
+        };
+        
+        console.log('testBroadcast()');
+
 
         // ---- Mining stats ---
         let miningStats = {
@@ -306,52 +558,87 @@
             elapsed: 0,
             tried: 0,
             speed: 0,
-            lowestHash: null
+            lowestHash: null,
+            lowestHashBigInt: null,
+            target: null,
+            difficulty: 0,
+            updatesCount: 0
         };
         let statsInterval = null;
+        let chartCtx = null;
+        
         function resetStats() {
-            miningStats = {startTimestamp: 0, elapsed: 0, tried: 0, speed: 0, lowestHash: null};
+            miningStats = {startTimestamp: 0, elapsed: 0, tried: 0, speed: 0, lowestHash: null, lowestHashBigInt: null, target: null, difficulty: 0, updatesCount: 0};
+            hashRateData = [];
             updateStatsPanel();
         }
+        
         function updateStatsPanel() {
             document.getElementById('stat_nonces').textContent = miningStats.tried.toLocaleString();
             document.getElementById('stat_secs').textContent = miningStats.elapsed.toFixed(2) + "s";
-            document.getElementById('stat_speed').textContent = miningStats.speed.toLocaleString();
-            document.getElementById('stat_lowest').textContent = miningStats.lowestHash ? miningStats.lowestHash : "(none)";
+            document.getElementById('stat_speed').textContent = miningStats.speed.toLocaleString() + " H/s";
+            
+            // Display full difficulty number (in trillions)
+            document.getElementById('stat_difficulty').textContent = miningStats.difficulty ? miningStats.difficulty.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : "-";
+            
+            // Display full target hash
+            if (miningStats.target) {
+                const targetHex = miningStats.target.toString(16).padStart(64, '0');
+                document.getElementById('stat_target').textContent = targetHex;
+            } else {
+                document.getElementById('stat_target').textContent = "-";
+            }
+            
+            // Display lowest hash found
+            if (miningStats.lowestHash) {
+                document.getElementById('foundHash').textContent = miningStats.lowestHash;
+            } else {
+                document.getElementById('foundHash').textContent = "-";
+            }
         }
+        
         function startStatsTicker() {
             if (statsInterval) clearInterval(statsInterval);
+            chartCtx = initChart();
+            
             statsInterval = setInterval(() => {
                 if (miningStats.startTimestamp)
                     miningStats.elapsed = (performance.now() - miningStats.startTimestamp)/1000;
-                if (miningStats.elapsed > 0)
+                if (miningStats.elapsed > 0) {
                     miningStats.speed = Math.floor(miningStats.tried / miningStats.elapsed);
+                    hashRateData.push(miningStats.speed);
+                    if (hashRateData.length > maxDataPoints) hashRateData.shift();
+                }
                 updateStatsPanel();
+                if (chartCtx) updateChart(chartCtx, hashRateData);
             }, 200);
         }
+        
         function endStatsTicker() {
             if (statsInterval) clearInterval(statsInterval);
             statsInterval = null;
         }
 
         async function startMining() {
-            nonceLogOn = document.getElementById('toggleNonceWindow').checked;
-            if (nonceLogOn) { openLogWindow(); if (logWin && !logWin.closed) logWin.logDiv.innerHTML = ''; }
-            else closeLogWindow();
-            // Typing effect clears output
+            clearNonceStream();
+            
             const statusDiv = document.getElementById('status');
-            const foundHashP = document.getElementById('foundHash');
             const blockHeaderTextarea = document.getElementById('blockHeader');
             resetStats();
             statusDiv.className = '';
-            await typeText(statusDiv, 'Fetching latest block data...');
-            foundHashP.textContent = '';
+            await typeText(statusDiv, 'Fetching latest block data...', 8);
+            document.getElementById('foundHash').textContent = '-';
+            
             try {
                 const header = await getLatestBlockHeader();
                 await typeText(blockHeaderTextarea, JSON.stringify(header, null, 2), 2);
                 await new Promise(res=>setTimeout(res,200));
-                await typeText(statusDiv, 'Data fetched. Beginning hash calculation...');
+                await typeText(statusDiv, 'Data fetched. Beginning hash calculation...', 8);
                 const target = bitsToTarget(header.bits);
+                miningStats.target = target;
+                const targetNum = Number(target);
+                const maxTarget = Number(0xFFFFn * (2n ** 208n));
+                miningStats.difficulty = maxTarget / targetNum / 1e12;
 
                 let nonce = 0, stop = false;
                 miningStats.startTimestamp = performance.now();
@@ -359,37 +646,56 @@
                 miningStats.tried = 0;
                 miningStats.speed = 0;
                 miningStats.lowestHash = null;
+                miningStats.lowestHashBigInt = null;
+                miningStats.updatesCount = 0;
                 updateStatsPanel();
                 startStatsTicker();
 
-                async function mineChunk() {
-                    if (nonceLogOn) openLogWindow();
-                    for (let i = 0; i < 100000 && !stop; ++i, ++nonce) {
+                async function mineChunk(firstRun = false) {
+                    const chunkSize = firstRun ? 500000 : 100000; // Larger first chunk
+                    for (let i = 0; i < chunkSize && !stop; ++i, ++nonce) {
                         header.nonce = nonce;
                         let raw = serializeBlockHeader(header);
                         let hashHex = await doubleSHA256(raw);
                         let reversedHash = toLittleEndian(hashHex);
                         let hashNum = BigInt('0x' + reversedHash);
-                        logNonce(nonce, reversedHash, hashNum < target);
-
-                        // lowest hash stats
-                        if (miningStats.lowestHash === null || hashNum < BigInt('0x'+miningStats.lowestHash)) {
-                            miningStats.lowestHash = reversedHash;
+                        
+                        // Log every 100th nonce to stream
+                        if (nonce % 100 === 0) {
+                            logNonceToStream(nonce, reversedHash, hashNum < target);
                         }
+
+                        // Update lowest hash - check if this is lower than current best
+                        if (miningStats.lowestHashBigInt === null || hashNum < miningStats.lowestHashBigInt) {
+                            miningStats.lowestHash = reversedHash;
+                            miningStats.lowestHashBigInt = hashNum;
+                            miningStats.updatesCount++;
+                            // Log to console for debugging
+                            if (miningStats.updatesCount <= 50) {
+                                console.log(`Update #${miningStats.updatesCount} at nonce ${nonce}: ${reversedHash.substring(0, 16)}...`);
+                            }
+                        }
+                        
                         miningStats.tried = nonce;
 
                         if (hashNum < target) {
                             endStatsTicker();
                             statusDiv.className = 'success';
-                            await typeText(statusDiv, `Success! Valid hash found at nonce: ${nonce.toLocaleString()}`, 16);
-                            await typeText(foundHashP, reversedHash, 4);
-                            if (nonceLogOn) logNonce(nonce, reversedHash, true);
+                            await typeText(statusDiv, `>>> SUCCESS! VALID HASH FOUND AT NONCE: ${nonce.toLocaleString()} <<<`, 12);
+                            logNonceToStream(nonce, reversedHash, true);
                             updateStatsPanel();
+                            
+                            // Attempt to broadcast the winning block
+                            await broadcastBlock(header, reversedHash);
                             return;
                         }
-                        if (nonce % 1000 === 0) {
+                        
+                        // Update display less frequently for better performance
+                        if (nonce % 500 === 0) {
                             statusDiv.className = '';
-                            await typeText(statusDiv, `Mining chunk... Nonce: ${nonce.toLocaleString()}`, 1, false);
+                            statusDiv.textContent = `Mining... Nonce: ${nonce.toLocaleString()}`;
+                            // Allow UI to update
+                            await new Promise(resolve => setTimeout(resolve, 0));
                         }
                     }
                     if (!stop) {
@@ -399,14 +705,14 @@
                         if (cont) {
                             miningStats.startTimestamp = performance.now() - miningStats.elapsed*1000;
                             startStatsTicker();
-                            mineChunk();
+                            mineChunk(false);
                         } else {
                             statusDiv.textContent = `Stopped at nonce ${nonce.toLocaleString()}.`;
                             statusDiv.className = '';
                         }
                     }
                 }
-                mineChunk();
+                mineChunk(true);
             } catch (error) {
                 endStatsTicker();
                 statusDiv.textContent = 'Error: ' + error.message;
